@@ -9,14 +9,14 @@ class Saying{
     String content;
     String author;
     int id;
-    static int count = 1;
+    static int lastId;
 
     Saying(){}
 
     Saying(String content, String author){
         this.content = content;
         this.author = author;
-        this.id = count++;
+        this.id = ++lastId;
         System.out.println(this.id + "번 명언이 등록되었습니다.");
     }
 
@@ -39,11 +39,22 @@ public class Main {
 
     static void saveFile(Saying saying) { // 파일 저장
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("ID = ").append(saying.id).append(" / ")
-                .append("author = ").append(saying.author).append(" / ")
-                .append("content = ").append(saying.content);
+        stringBuilder.append("{\n")
+                .append("\"ID\" : ").append(saying.id).append(",\n ")
+                .append("\"author\" : \"").append(saying.author).append("\",\n")
+                .append("\"content\" : \"").append(saying.content).append("\"\n")
+                .append("}");
 
-        try(FileWriter writer = new FileWriter("DB/" + saying.id + ".txt")){
+        try(FileWriter writer = new FileWriter("DB/wiseSaying/" + saying.id + ".json")){
+            writer.write(stringBuilder.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        stringBuilder.setLength(0);
+        stringBuilder.append(Saying.lastId);
+
+        try(FileWriter writer = new FileWriter("DB/wiseSaying/lastId.text")){
             writer.write(stringBuilder.toString());
         } catch (IOException e) {
             e.printStackTrace();
@@ -51,7 +62,7 @@ public class Main {
     }
 
     static void delFile(int targetNum) { // 파일 삭제
-        File file = new File("DB/" + targetNum + ".txt");
+        File file = new File("DB/wiseSaying/" + targetNum + ".json");
         if(file.delete()){
         }else{
             System.out.println("파일을 삭제하지 못했습니다.");
@@ -60,40 +71,57 @@ public class Main {
 
     static ArrayList<Saying> sortList(ArrayList<Saying> sayings) { // 배열 정렬하기
         ArrayList<Saying> newList = new ArrayList<>();
-        for(int i = 0 ; i < Saying.count-1 ; i++){
+        for(int i = 0 ; i < Saying.lastId ; i++){
             newList.add(new Saying());
         }
         for(Saying saying : sayings){
             newList.set(newList.size() - saying.id, saying);
         }
         while(newList.remove(findSaying(0,newList))){}
-        return sayings = newList;
+        return newList;
     }
 
     static void readDB(ArrayList<Saying> sayings) { // 지난 파일 읽어오기
-        File[] files = new File("DB").listFiles();
-        if(files != null){
-            for(File file : files){
+        // DB 폴더 확인 및 만들기
+        File folder = new File("DB/wiseSaying");
+        if(!folder.exists()){
+            folder.mkdirs();
+        }
+
+        File[] files = new File("DB/wiseSaying").listFiles();
+        for(File file : files){
+            if(file.toString().equals("DB/wiseSaying/.DS_Store")){
+                continue;
+            }else if(file.toString().equals("DB/wiseSaying/lastId.text")){
                 try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
-                    String fileContent = bufferedReader.readLine();
-                    String[] elementAList = fileContent.split("/");
-                    List<String> list = new ArrayList<>();
-
-                    for(String elementA : elementAList){
-                        String[] elementBList = elementA.split("=");
-                        list.add(elementBList[1].strip());
-                    }
-
-                    Saying savingFromBefore = new Saying(Integer.parseInt(list.get(0)), list.get(2), list.get(1));
-                    sayings.add(savingFromBefore);
-
-                    if(sayings.getLast().id + 1 > Saying.count){
-                        Saying.count = sayings.getLast().id + 1;
-                    }
-
+                    Saying.lastId = Integer.parseInt(bufferedReader.readLine());
+                    continue;
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            }
+            try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
+                String fileContent;
+                List<String> list = new ArrayList<>();
+                while ((fileContent = bufferedReader.readLine()) != null){
+                    list.add(fileContent);
+                }
+
+                ArrayList<String> outputList = new ArrayList<>();
+                for(String s : list){
+                    if(s.equals("{") || s.equals("}")){
+                        continue;
+                    }
+                    String[] elementList = s.split(":");
+                    outputList.add(elementList[1].replaceAll("[\",]","").strip());
+                }
+
+                Saying savingFromBefore = new Saying(Integer.parseInt(outputList.get(0)),outputList.get(1),outputList.get(2)); // 가져온 내용으로 객체 생성
+                sayings.add(savingFromBefore);
+
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -123,12 +151,6 @@ public class Main {
                 author = scanner.nextLine();
                 Saying saying = new Saying(content, author);
                 sayings.addFirst(saying);
-
-                // 폴더 확인 및 만들기
-                File folder = new File("DB");
-                if(!folder.exists()){
-                    folder.mkdir();
-                }
 
                 // 파일 생성
                 saveFile(saying);
