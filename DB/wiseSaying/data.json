@@ -1,0 +1,17 @@
+[
+{
+"id" : 1,
+"content" : "금쟁이",
+"author" : "시간은 금이다."
+},
+{
+"id" : 2,
+"content" : "황인우",
+"author" : "너무 피곤함"
+},
+{
+"id" : 4,
+"content" : "황인우",
+"author" : "lastId 테스트"
+}
+]

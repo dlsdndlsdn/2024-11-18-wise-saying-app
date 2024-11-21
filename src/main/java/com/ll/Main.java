@@ -92,6 +92,8 @@ public class Main {
         for(File file : files){
             if(file.toString().equals("DB/wiseSaying/.DS_Store")){
                 continue;
+            }else if(file.toString().equals("DB/wiseSaying/data.json")){
+                continue;
             }else if(file.toString().equals("DB/wiseSaying/lastId.text")){
                 try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
                     Saying.lastId = Integer.parseInt(bufferedReader.readLine());
@@ -197,9 +199,32 @@ public class Main {
 
                     System.out.println(modNo + "번 명언이 수정되었습니다.");
                 }
+            }else if (command.equals("빌드")) {
+                StringBuilder stringBuilder = new StringBuilder();
+                stringBuilder.append("[");
 
+                for(Saying s : sayings){
+                    stringBuilder.append("\n{\n")
+                            .append("\"id\" : ").append(s.id).append(",\n")
+                            .append("\"content\" : \"").append(s.content).append("\",\n")
+                            .append("\"author\" : \"").append(s.author).append("\"\n")
+                            .append("},");
+                }
+
+                stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+                stringBuilder.append("\n]");
+
+                try(FileWriter writer = new FileWriter("DB/wiseSaying/data.json")){
+                    writer.write(stringBuilder.toString());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                System.out.println("data.json 파일의 내용이 갱신되었습니다.");
+
+            }
             //잘못된 명령 입력 모음
-            }else if (command.equals("삭제")) {
+            else if (command.equals("삭제")) {
                 System.out.println("명령어는 삭제? id = 의 형식으로 입력해주세요.");
 
             }else if (command.equals("수정")) {
